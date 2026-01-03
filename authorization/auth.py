@@ -23,7 +23,7 @@ security = AuthX(config=config)
 async def login(login: str, password: str, response: Response = None, session: SessionDep = None):
     query = select(UserModel).where(UserModel.login == login).where(UserModel.password == password)
     result = await session.execute(query)
-    data = result.scalars_one_or_none()
+    data = result.scalar_one_or_none()
     if data:
         is_admin = int(data.is_admin)
         is_adm = 1 if is_admin else 0
