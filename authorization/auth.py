@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from typing import Dict, Any
 from datetime import datetime
 
-from schemas.schemas import UserModel, UserAddSchema
+from schemas.schemas import UserModel, UserAddSchema, MessageModel
 from database.database import SessionDep
 
 router = APIRouter(prefix="/auth")
