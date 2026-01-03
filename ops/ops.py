@@ -8,7 +8,7 @@ from schemas.schemas import UserModel, MessageModel
 
 router = APIRouter(prefix="/ops")
 
-@router.get("/user_info/{user_id}", dependencies=[Depends(security.access_token_required), Depends(admin_required)])
+@router.get("/user_info/{user_id}", dependencies=[Depends(security.access_token_required)])
 async def get_user_info(user_id: int, session: SessionDep):
         query = select(UserModel).where(UserModel.id == user_id)
         result = await session.execute(query)
@@ -45,3 +45,12 @@ async def send_message(sender_id: int, recipient_id: int, content: str, session:
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail="Ошибка при отправке сообщения")
+
+@router.get("/get_messages", dependencies=[Depends(security.access_token_required)])
+async def get_user_info(user_id: int, session: SessionDep):
+        query = select(MessageModel).where(or_(MessageModel.recipient_id == user_id, MessageModel.sender_id == 1))
+        result = await session.execute(query)
+        messages = result.scalars().all()
+        if messages is None:
+            raise HTTPException(status_code=404, detail="Сообщения не найдены")
+        return messages
