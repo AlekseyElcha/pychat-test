@@ -14,8 +14,9 @@ router = APIRouter(prefix="/auth")
 load_dotenv()
 config = AuthXConfig()
 config.JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-config.JWT_TOKEN_LOCATION = ["cookies", "headers"]
+config.JWT_TOKEN_LOCATION = ["cookies"]
 config.JWT_ALGORITHM = "HS256"
+config.JWT_ACCESS_COOKIE_NAME = "auth_cookies"
 config.JWT_COOKIE_CSRF_PROTECT = False
 security = AuthX(config=config)
 
@@ -25,13 +26,8 @@ async def login(login: str, password: str, response: Response = None, session: S
     result = await session.execute(query)
     data = result.scalar_one_or_none()
     if data:
-        is_admin = int(data.is_admin)
-        is_adm = 1 if is_admin else 0
-        user_data = {
-            "login": data.login,
-            "is_admin": is_adm
-        }
-        token = security.create_access_token(uid=login, data=user_data)
+        token = security.create_access_token(uid=login)
+        response.set_cookie(config.JWT_ACCESS_COOKIE_NAME, token)
         security.set_access_cookies(token, response)
 
         return {
@@ -44,7 +40,7 @@ async def login(login: str, password: str, response: Response = None, session: S
                 "is_admin": bool(data.is_admin)
             }
         }
-    raise HTTPException(status_code=404, detail="Неверный логин или пароль")
+    raise HTTPException(status_code=401, detail="Неверный логин или пароль")
 
 
 @router.post("/create_account")
