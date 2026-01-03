@@ -4,8 +4,9 @@ from fastapi import Depends, HTTPException, Response, APIRouter
 from authx import AuthXConfig, AuthX
 from dotenv import load_dotenv
 from typing import Dict, Any
-from datetime import datetime
 
+
+from datetime import datetime
 from schemas.schemas import UserModel, UserAddSchema, MessageModel
 from database.database import SessionDep
 
@@ -80,5 +81,14 @@ async def admin_required(user = Depends(security.access_token_required)):
         raise HTTPException(status_code=403, detail="Требуются права администратора")
     return user
 
+# async def check_user(us_id: int, user = Depends(security.access_token_required)):
+#     try:
+#         user_id = user.get("id")
+#         if us_id == user_id:
+#             return {
+#                 "permission": "granted"
+#             }
+#     except AttributeError:
+#         raise HTTPException(status_code=403, detail="Нет доступа")
 
 

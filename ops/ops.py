@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import select, or_, and_
 from datetime import datetime
+import jwt
 
 from authorization.auth import admin_required, security
 from database.database import SessionDep, engine
@@ -47,10 +48,23 @@ async def send_message(sender_id: int, recipient_id: int, content: str, session:
         raise HTTPException(status_code=500, detail="Ошибка при отправке сообщения")
 
 @router.get("/get_messages", dependencies=[Depends(security.access_token_required)])
-async def get_user_info(user_id: int, session: SessionDep):
-        query = select(MessageModel).where(or_(MessageModel.recipient_id == user_id, MessageModel.sender_id == 1))
+async def get_chat_history(user_id: int, partner_id: int, session: SessionDep, request: Request):
+        print(jwt.decode(security.get_token_from_request))
+        query = select(MessageModel).where(
+        or_(
+            and_(
+                MessageModel.sender_id == user_id,
+                MessageModel.recipient_id == partner_id,
+            ),
+            and_(
+                MessageModel.sender_id == partner_id,
+                MessageModel.recipient_id == user_id,
+            )
+        )
+        )
         result = await session.execute(query)
         messages = result.scalars().all()
         if messages is None:
             raise HTTPException(status_code=404, detail="Сообщения не найдены")
         return messages
+
