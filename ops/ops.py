@@ -75,3 +75,5 @@ async def get_chat_history(user_id: int, partner_id: int, session: SessionDep, r
             raise HTTPException(status_code=404, detail="Сообщения не найдены")
         return messages
     raise HTTPException(status_code=403, detail="Нет доступа")
+
+
