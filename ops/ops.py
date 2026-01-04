@@ -2,12 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select, or_, and_
 from datetime import datetime
 import jwt
+import os
 
 from authorization.auth import admin_required, security
 from database.database import SessionDep, engine
 from schemas.schemas import UserModel, MessageModel
 
 router = APIRouter(prefix="/ops")
+
+secret = os.getenv("JWT_SECRET_KEY")
 
 @router.get("/user_info/{user_id}", dependencies=[Depends(security.access_token_required)])
 async def get_user_info(user_id: int, session: SessionDep):
@@ -49,7 +52,10 @@ async def send_message(sender_id: int, recipient_id: int, content: str, session:
 
 @router.get("/get_messages", dependencies=[Depends(security.access_token_required)])
 async def get_chat_history(user_id: int, partner_id: int, session: SessionDep, request: Request):
-        print(jwt.decode(security.get_token_from_request))
+        # print(jwt.decode((request.cookies)["auth_cookies"], algorithms=["HS256"]))
+        auth_token = (request.cookies)["auth_cookies"]
+        token = jwt.decode(auth_token, secret, algorithms=["HS256"])
+        print(token)
         query = select(MessageModel).where(
         or_(
             and_(
