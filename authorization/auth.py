@@ -83,12 +83,9 @@ async def admin_required(user = Depends(security.access_token_required)):
         raise HTTPException(status_code=403, detail="Требуются права администратора")
     return user
 
-async def check_user(auth_token: str, expected_login: str):
+def check_user(auth_token: str, expected_login: str, secret: str):
     decoded_token = jwt.decode(auth_token, secret, algorithms=["HS256"])
-    user_login_from_token = decoded_token["sub"]
+    user_login_from_token = str(decoded_token.get("sub"))
     if user_login_from_token == expected_login:
-        return {
-            "access": "allowed",
-            "user_login": user_login_from_token
-        }
-    raise HTTPException(status_code=403, detail="Нет доступа")
+        return True
+    return False
