@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, Response, APIRouter
 from authx import AuthXConfig, AuthX
 from dotenv import load_dotenv
 from typing import Dict, Any
+import jwt
 
 
 from datetime import datetime
@@ -11,6 +12,7 @@ from schemas.schemas import UserModel, UserAddSchema, MessageModel
 from database.database import SessionDep
 
 router = APIRouter(prefix="/auth")
+secret = os.getenv("JWT_SECRET_KEY")
 
 load_dotenv()
 config = AuthXConfig()
@@ -81,14 +83,12 @@ async def admin_required(user = Depends(security.access_token_required)):
         raise HTTPException(status_code=403, detail="Требуются права администратора")
     return user
 
-# async def check_user(us_id: int, user = Depends(security.access_token_required)):
-#     try:
-#         user_id = user.get("id")
-#         if us_id == user_id:
-#             return {
-#                 "permission": "granted"
-#             }
-#     except AttributeError:
-#         raise HTTPException(status_code=403, detail="Нет доступа")
-
-
+async def check_user(auth_token: str, expected_login: str):
+    decoded_token = jwt.decode(auth_token, secret, algorithms=["HS256"])
+    user_login_from_token = decoded_token["sub"]
+    if user_login_from_token == expected_login:
+        return {
+            "access": "allowed",
+            "user_login": user_login_from_token
+        }
+    raise HTTPException(status_code=403, detail="Нет доступа")

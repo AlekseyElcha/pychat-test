@@ -4,12 +4,11 @@ from datetime import datetime
 import jwt
 import os
 
-from authorization.auth import admin_required, security
+from authorization.auth import admin_required, security, check_user
 from database.database import SessionDep, engine
 from schemas.schemas import UserModel, MessageModel
 
 router = APIRouter(prefix="/ops")
-
 secret = os.getenv("JWT_SECRET_KEY")
 
 @router.get("/user_info/{user_id}", dependencies=[Depends(security.access_token_required)])
@@ -52,25 +51,28 @@ async def send_message(sender_id: int, recipient_id: int, content: str, session:
 
 @router.get("/get_messages", dependencies=[Depends(security.access_token_required)])
 async def get_chat_history(user_id: int, partner_id: int, session: SessionDep, request: Request):
-        # print(jwt.decode((request.cookies)["auth_cookies"], algorithms=["HS256"]))
-        auth_token = (request.cookies)["auth_cookies"]
-        token = jwt.decode(auth_token, secret, algorithms=["HS256"])
-        print(token)
-        query = select(MessageModel).where(
-        or_(
-            and_(
-                MessageModel.sender_id == user_id,
-                MessageModel.recipient_id == partner_id,
-            ),
-            and_(
-                MessageModel.sender_id == partner_id,
-                MessageModel.recipient_id == user_id,
-            )
-        )
-        )
-        result = await session.execute(query)
-        messages = result.scalars().all()
-        if messages is None:
-            raise HTTPException(status_code=404, detail="Сообщения не найдены")
-        return messages
+    query = select(UserModel).where(UserModel.id == user_id)
+    result = await session.execute(query)
+    user_info = result.scalar_one_or_none()
+    return user_info.json()
+    # token = request.cookies["auth_cookies"]
+    # t = check_user(auth_token=token, expected_login=user_login)
+    # return t
+    # query = select(MessageModel).where(
+    # or_(
+    #     and_(
+    #         MessageModel.sender_id == user_id,
+    #         MessageModel.recipient_id == partner_id,
+    #     ),
+    #     and_(
+    #         MessageModel.sender_id == partner_id,
+    #         MessageModel.recipient_id == user_id,
+    #     )
+    # )
+    # )
+    # result = await session.execute(query)
+    # messages = result.scalars().all()
+    # if messages is None:
+    #     raise HTTPException(status_code=404, detail="Сообщения не найдены")
+    # return messages
 
